@@ -1,0 +1,4 @@
+# Ignore vs temp folder
+.vs
+bin
+obj
