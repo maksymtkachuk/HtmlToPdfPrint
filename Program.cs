@@ -27,9 +27,32 @@ namespace DrawString
             pdfDocument.RegistrationName = "demo";
             pdfDocument.RegistrationKey = "demo";
 
+            // Define HTML string
+            const string htmlString = "<!DOCTYPE html>\r\n\r\n<html>\r\n\r\n<body>\r\n\r\n<h1>Heading 1</h1>\r\n\r\n<h2>Heading 2</h2>\r\n\r\n<h3>Heading 3</h3>\r\n\r\n<h4>Heading 4</h4>\r\n\r\n<h5>Heading 5</h5>\r\n\r\n<h6>Heading 6</h6>\r\n\r\n<a href=\"https://www.w3schools.com\">Visit W3Schools</a>\r\n\r\n<p><b>This text is bold</b></p>\r\n\r\n<p><i>This text is italic</i></p>\r\n\r\n<p><strong>This text is important!</strong></p>\r\n\r\n<p><em>This text is emphasized</em></p>\r\n\r\n<p><small>This is some smaller text.</small></p>\r\n\r\n</body>\r\n\r\n</html>";
+
+            // Write parsed html string into document
+            int ret = DrawStringWithHTML(pdfDocument, htmlString);
+
+            if (ret == 0)
+            {
+                // Save document to file
+                pdfDocument.Save("result.pdf");
+            }
+
+            return;
+        }
+
+        private static int DrawStringWithHTML(Document pDocument, string pHtmlText)
+        {
+            // Check input parameters
+            if ((pDocument == null) || (pHtmlText == null))
+            {
+                return -1;
+            }
+
             // Add page
             Page page = new Page(PaperFormat.A4);
-            pdfDocument.Pages.Add(page);
+            pDocument.Pages.Add(page);
 
             Font font = null;
             Brush brush = null;
@@ -40,24 +63,24 @@ namespace DrawString
 
             // Parse html tags
             TagParser.TagParser parser = new TagParser.TagParser();
-            parser.ParseText("<!DOCTYPE html>\r\n\r\n<html>\r\n\r\n<body>\r\n\r\n<h1>Heading 1</h1>\r\n\r\n<h2>Heading 2</h2>\r\n\r\n<h3>Heading 3</h3>\r\n\r\n<h4>Heading 4</h4>\r\n\r\n<h5>Heading 5</h5>\r\n\r\n<h6>Heading 6</h6>\r\n\r\n<a href=\"https://www.w3schools.com\">Visit W3Schools</a>\r\n\r\n<p><b>This text is bold</b></p>\r\n\r\n<p><i>This text is italic</i></p>\r\n\r\n<p><strong>This text is important!</strong></p>\r\n\r\n<p><em>This text is emphasized</em></p>\r\n\r\n<p><small>This is some smaller text.</small></p>\r\n\r\n</body>\r\n\r\n</html>");
-            Console.WriteLine(parser.plainText);
+            parser.ParseText(pHtmlText);
 
             for (int i = 0; i < parser.tags.Count; i++)
             {
                 TagObject tag = parser.tags[i];
+                string tagText = parser.plainText.Substring(tag.startIndex, tag.endIndex - tag.startIndex + 1);
+#if _DEBUG
                 Console.WriteLine(tag.Name); // print the name of the tag
-                string tagText = parser.plainText.Substring(tag.startIndex, tag.endIndex - tag.startIndex+1);
                 Console.WriteLine(tagText);
                 for (int j = 0; j < tag.Properties.Count; j++)
                 {
-                    Console.WriteLine(tag.Properties[j].key); // would print "amount"
-                    Console.WriteLine(tag.Properties[j].value); // would print "3"
+                    Console.WriteLine(tag.Properties[j].key);
+                    Console.WriteLine(tag.Properties[j].value);
                 }
-
-                switch (tag.Name)
+#endif
+                switch (tag.Name)   // html tags
                 {
-                     case "h0":
+                    case "h0":
                         font = new Font("Arial", 40.0f);
                         brush = new SolidBrush();
                         break;
@@ -92,7 +115,7 @@ namespace DrawString
                             {
                                 string uriStr = tag.Properties[j].value.Substring(1, tag.Properties[j].value.Length - 2);
                                 URIAction action = new URIAction(new Uri(uriStr));
-                                LinkAnnotation linkAnnotation = new LinkAnnotation(action, left, top, tagText.Length*6+5, 15);
+                                LinkAnnotation linkAnnotation = new LinkAnnotation(action, left, top, tagText.Length * 6 + 5, 15);
                                 linkAnnotation.HighlightingMode = LinkAnnotationHighlightingMode.None;
                                 linkAnnotation.Color = new ColorRGB(255, 255, 255);
                                 page.Annotations.Add(linkAnnotation);
@@ -134,10 +157,7 @@ namespace DrawString
                 }
             }
 
-            // Save document to file
-            pdfDocument.Save("result.pdf");
-
-            return;
+            return 0;
         }
     }
 }
